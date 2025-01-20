@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Onnenpyörä</title>
+    <style>
+        /* Yleinen tyylit */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #032046;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+            position: relative;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            width: 100%;
+            max-width: 650px;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: #000000;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        #wheel-container {
+            position: relative;
+            width: 450px;
+            height: 450px;
+            margin: 20px auto;
+            border: 5px solid white;
+            border-radius: 50%;
+            display: none;
+            transition: all 0.3s ease;
+        }
+
+        canvas {
+            border-radius: 50%;
+            width: 100%;
+            height: 100%;
+        }
+
+        #pointer {
+            position: absolute;
+            top: 215px;
+            left: 104%;
+            transform: translateX(-50%) rotate(-90deg);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 30px solid rgb(0, 0, 0);
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+
+        #controls {
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 24px;
+            background-color: #7bdcb5;
+            color: rgb(0, 0, 0);
+            font-size: 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #dd3dba;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        #message {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 200;
+            display: none;
+            text-shadow: 6px 6px 15px rgba(2, 2, 2, 0.9);
+            border: 3px solid white;
+            padding: 20px;
+            border-radius: 15px;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        #overlay {
+            position: relative;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            z-index: 100;
+        }
+
+        #options-container {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        textarea {
+            width: 250px;
+            height: 80px;
+            font-size: 16px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        #options-container button {
+            margin: 5px;
+            padding: 10px 18px;
+            background-color: #7bdcb5;
+            color: rgb(0, 0, 0);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        #options-container button:hover {
+            background-color: #dd3dba;
+        }
+
+        #raseko-text {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 38px;
+            font-weight: bold;
+            color: rgba(248, 78, 149, 0.8);
+            z-index: 10;
+            text-shadow: 3px 3px 10px rgba(255, 0, 191, 0.8);
+        }
+
+        /* Uusi tyyli kysymykselle */
+        #question-container {
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        #question-container hr {
+            margin-top: 10px;
+            border: 1px solid #ddd;
+        }
+
+        #answer-buttons {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #answer-buttons button {
+            margin: 10px;
+            padding: 12px 24px;
+            font-size: 18px;
+            background-color: #032046;
+            color: white;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        #answer-buttons button:hover {
+            background-color: #dd3dba;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="raseko-text">RASEKO</div>
+
+    <div id="overlay"></div>
+
+    <div class="container">
+        <h1>Onnenpyörä</h1>
+        <div id="wheel-container">
+            <canvas id="wheel"></canvas>
+            <div id="pointer"></div>
+        </div>
+
+        <div id="controls">
+            <button id="spinButton">Pyöritä!</button>
+            <div id="message"></div>
+        </div>
+
+        <div id="options-container">
+            <label for="question-input">Lisää kysymys ja vastaukset:</label>
+            <textarea id="question-input" placeholder="Kysymys? | O:Oikea Vastaus, Väärä Vastaus, Kolmas vastaus"></textarea>
+            <button id="add-question-button">Lisää kysymys</button>
+            <button id="clear-choices-button">Tyhjennä kysymykset</button>
+        </div>
+
+        <!-- Kysymys ja vastausosio -->
+        <div id="question-container" style="display: none;">
+            <div id="question-text"></div>
+            <hr>
+        </div>
+
+        <div id="answer-buttons" style="display: none;"></div>
+
+        <!-- Takaisin aloitusruutuun -painike -->
+        <button id="backButton" style="display:none;">Takaisin</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('wheel');
+        const ctx = canvas.getContext('2d');
+        const spinButton = document.getElementById('spinButton');
+        const messageDiv = document.getElementById('message');
+        const overlay = document.getElementById('overlay');
+        const questionInput = document.getElementById('question-input');
+        const addQuestionButton = document.getElementById('add-question-button');
+        const clearChoicesButton = document.getElementById('clear-choices-button');
+        const optionsContainer = document.getElementById('options-container');
+        const wheelContainer = document.getElementById('wheel-container');
+        const pointer = document.getElementById('pointer');
+        const body = document.body;
+
+        const questionTextDiv = document.getElementById('question-text');
+        const answerButtonsDiv = document.getElementById('answer-buttons');
+        const backButton = document.getElementById('backButton');
+
+        canvas.width = 350;
+        canvas.height = 350;
+
+        let questions = [];
+        let currentQuestion = null;
+        let spinning = false;
+        let currentRotation = 0;
+        let isWheelVisible = false;
+        let answered = false;
+
+        // Funktio kysymysten ja vastausten muotoiluun
+        function parseQuestion(input) {
+            const parts = input.split('|');
+            const questionText = parts[0].trim();
+            const answers = parts[1].split(',').map(ans => ans.trim());
+            let correctAnswer = null;
+
+            // Etsi oikea vastaus (joka alkaa "O:")
+            answers.forEach((answer, index) => {
+                if (answer.startsWith('O:')) {
+                    correctAnswer = answer.substring(2).trim(); // Poistetaan "O:" merkki
+                    answers[index] = correctAnswer; // Asetetaan oikea vastaus tavalliseksi vaihtoehdoksi
+                }
+            });
+
+            return { questionText, answers, correctAnswer };
+        }
+
+        // Piirretään pyörä
+        function drawWheel() {
+            if (questions.length === 0) return;
+
+            const segmentCount = questions.length;
+            const segmentAngle = (2 * Math.PI) / segmentCount;
+            const colors = ["#ffb3d9", "#ff99cc", "#ff80bf", "#ff66b3", "#ff4da6"];
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+
+            for (let i = 0; i < segmentCount; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, canvas.width / 2, i * segmentAngle, (i + 1) * segmentAngle);
+                ctx.fillStyle = colors[i % colors.length];
+                ctx.fill();
+                ctx.strokeStyle = "white";
+                ctx.stroke();
+
+                ctx.save();
+                ctx.rotate(i * segmentAngle + segmentAngle / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = "white";
+                ctx.font = "bold 12px Arial";
+                ctx.fillText(questions[i].questionText, canvas.width / 2 - 20, 10);
+                ctx.restore();
+            }
+
+            ctx.restore();
+        }
+
+        // Funktio pyöräyttää pyörää
+        function spinWheel() {
+            if (spinning || !isWheelVisible || answered) return; 
+            spinning = true;
+            const randomDegree = Math.random() * 360 + 720;
+            currentRotation += randomDegree;
+            canvas.style.transition = "transform 3s cubic-bezier(0.17, 0.67, 0.83, 0.67)";
+            canvas.style.transform = `rotate(${currentRotation}deg)`;
+
+            setTimeout(() => {
+                spinning = false;
+                canvas.style.transition = "none";
+                const normalizedDegree = currentRotation % 360;
+                const segmentIndex = Math.floor(((360 - normalizedDegree) / (360 / questions.length)) % questions.length);
+                currentQuestion = questions[segmentIndex];
+                displayQuestion();
+            }, 3000);
+        }
+
+        // Näytetään kysymys ja vastausvaihtoehdot
+        function displayQuestion() {
+            const questionText = currentQuestion.questionText;
+            const answers = currentQuestion.answers;
+
+            questionTextDiv.textContent = questionText;
+            document.getElementById("question-container").style.display = "block";
+            answerButtonsDiv.innerHTML = ''; // Tyhjennetään aiemmat vastaukset
+            answerButtonsDiv.style.display = "block"; // Näytetään vastaukset
+
+            answers.forEach((answer, index) => {
+                const button = document.createElement('button');
+                button.textContent = answer;
+                button.onclick = () => checkAnswer(answer);
+                answerButtonsDiv.appendChild(button);
+            });
+
+            backButton.style.display = 'inline-block'; // Näytetään takaisinpainike
+        }
+
+        // Tarkistetaan, onko vastaus oikea
+        function checkAnswer(answer) {
+            if (answer === currentQuestion.correctAnswer) {
+                messageDiv.innerHTML = 'Oikein!';
+            } else {
+                messageDiv.innerHTML = 'Väärin!';
+            }
+            messageDiv.style.display = 'block'; // Näytetään viesti
+
+            // Piilotetaan kysymys ja vastausnapit, jos vastaus on annettu
+            questionTextDiv.textContent = '';
+            answerButtonsDiv.innerHTML = '';
+            document.getElementById("question-container").style.display = "none";
+            answerButtonsDiv.style.display = 'none';
+            
+            answered = true;
+        }
+
+        // Lisätään kysymys pyörään
+        function addQuestion() {
+            const inputText = questionInput.value;
+            if (!inputText.includes('|')) {
+                alert('Anna kysymys muodossa: Kysymys? | O:Oikea Vastaus, Väärä Vastaus');
+                return;
+            }
+            const question = parseQuestion(inputText);
+            questions.push(question);
+            questionInput.value = '';
+            drawWheel();
+        }
+
+        // Tyhjennetään kaikki kysymykset
+        function clearQuestions() {
+            questions = [];
+            drawWheel();
+        }
+
+        // Takaisin aloitusruutuun
+        function goBack() {
+            questionTextDiv.textContent = '';
+            answerButtonsDiv.innerHTML = '';
+            document.getElementById("question-container").style.display = "none";
+            answerButtonsDiv.style.display = 'none';
+            
+            // Näytetään alkuperäiset valinnat ja pyörä
+            optionsContainer.style.display = 'flex';
+            wheelContainer.style.display = 'none';
+            isWheelVisible = false;
+            resetGame();
+        }
+
+        // Nollaa pelin tila
+        function resetGame() {
+            messageDiv.style.display = 'none';
+            answered = false;
+            drawWheel();
+        }
+
+        // Tapahtumankuuntelijat
+        spinButton.addEventListener('click', () => {
+            if (!isWheelVisible) {
+                isWheelVisible = true;
+                wheelContainer.style.display = 'block';
+                optionsContainer.style.display = 'none';
+                drawWheel();
+            } else if (answered) {
+                resetGame(); // Nollaa pelin tila pyöräytyksen jälkeen
+                spinWheel(); // Pyöritä pyörää uudelleen
+            } else {
+                spinWheel(); // Pyöritä pyörää
+            }
+        });
+
+        addQuestionButton.addEventListener('click', addQuestion);
+        clearChoicesButton.addEventListener('click', clearQuestions);
+        backButton.addEventListener('click', goBack);  // Takaisin-painikkeen kuuntelija
+
+        drawWheel();
+    </script>
+</body>
+</html>
